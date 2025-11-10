@@ -1,0 +1,212 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  color-scheme: dark;
+  /* Core Backgrounds / Foregrounds */
+  --background: var(--color-background-900);
+  --foreground: var(--color-background-50);
+
+  /* Cards */
+  --card: var(--color-background-800);
+  --card-foreground: var(--color-background-50);
+
+  /* Popovers */
+  --popover: var(--color-background-800);
+  --popover-foreground: var(--color-background-50);
+
+  /* Primary */
+  --primary: var(--color-primary-500);
+  --primary-foreground: var(
+    --color-background-50
+  ); /* Light text on dark primary */
+
+  /* Secondary */
+  --secondary: var(--color-secondary-500);
+  --secondary-foreground: var(
+    --color-background-50
+  ); /* Light text on dark secondary */
+
+  /* Muted */
+  --muted: var(--color-background-700);
+  --muted-foreground: var(--color-background-300);
+
+  /* Accent */
+  --accent: var(--color-accent-500);
+  --accent-foreground: var(
+    --color-background-50
+  ); /* Light text on dark accent */
+
+  /* Destructive (mapped to your vibrant secondary red) */
+  --destructive: var(--color-secondary-500);
+  --destructive-foreground: var(--color-background-50);
+
+  /* Borders / Inputs */
+  --border: var(--color-background-700);
+  --input: var(--color-background-700);
+  --ring: var(--color-primary-300); /* Lighter ring color for focus */
+
+  /* Charts (Best-guess mapping) */
+  --chart-1: var(--color-primary-400);
+  --chart-2: var(--color-accent-400);
+  --chart-3: var(--color-primary-700);
+  --chart-4: var(--color-background-100);
+  --chart-5: var(--color-background-900);
+
+  /* Sidebar (Using darkest accent as the base) */
+  --sidebar: var(
+    --color-accent-900
+  ); /* This is the darkest color in your new set */
+  --sidebar-foreground: var(--color-background-50);
+  --sidebar-primary: var(--color-primary-500);
+  --sidebar-primary-foreground: var(--color-background-50);
+  --sidebar-accent: var(--color-accent-500);
+  --sidebar-accent-foreground: var(--color-background-50);
+  --sidebar-border: var(--color-background-800);
+  --sidebar-ring: var(--color-primary-300);
+
+  /* --- Non-Color Variables (Copied from original) --- */
+
+  /* Fonts */
+  --font-sans: var(--font-space-grotesk);
+  --font-serif: Roboto Serif, ui-serif, serif;
+  --font-mono: Fira Code, monospace;
+
+  /* Sizing */
+  --radius: 0.35rem;
+
+  /* Shadows */
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 6px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.12;
+  --shadow-color: #1a1a1a;
+  --shadow-2xs: 0px 4px 6px 0px hsl(0 0% 10.1961% / 0.06);
+  --shadow-xs: 0px 4px 6px 0px hsl(0 0% 10.1961% / 0.06);
+  --shadow-sm:
+    0px 4px 6px 0px hsl(0 0% 10.1961% / 0.12),
+    0px 1px 2px -1px hsl(0 0% 10.1961% / 0.12);
+  --shadow:
+    0px 4px 6px 0px hsl(0 0% 10.1961% / 0.12),
+    0px 1px 2px -1px hsl(0 0% 10.1961% / 0.12);
+  --shadow-md:
+    0px 4px 6px 0px hsl(0 0% 10.1961% / 0.12),
+    0px 2px 4px -1px hsl(0 0% 10.1961% / 0.12);
+  --shadow-lg:
+    0px 4px 6px 0px hsl(0 0% 10.1961% / 0.12),
+    0px 4px 6px -1px hsl(0 0% 10.1961% / 0.12);
+  --shadow-xl:
+    0px 4px 6px 0px hsl(0 0% 10.1961% / 0.12),
+    0px 8px 10px -1px hsl(0 0% 10.1961% / 0.12);
+  --shadow-2xl: 0px 4px 6px 0px hsl(0 0% 10.1961% / 0.3);
+}
+
+@theme {
+  /* Semantic colors - These reference the :root variables for consistency */
+
+  --color-primary-50: rgb(248, 237, 237);
+  --color-primary-100: rgb(240, 219, 219);
+  --color-primary-200: rgb(225, 183, 183);
+  --color-primary-300: rgb(211, 146, 146);
+  --color-primary-400: rgb(196, 110, 110);
+  --color-primary-500: rgb(181, 74, 74);
+  --color-primary-600: rgb(145, 59, 59);
+  --color-primary-700: rgb(109, 44, 44);
+  --color-primary-800: rgb(72, 30, 30);
+  --color-primary-900: rgb(36, 15, 15);
+
+  --color-secondary-50: rgb(250, 235, 236);
+  --color-secondary-100: rgb(245, 214, 217);
+  --color-secondary-200: rgb(234, 174, 180);
+  --color-secondary-300: rgb(224, 133, 142);
+  --color-secondary-400: rgb(213, 93, 105);
+  --color-secondary-500: rgb(203, 52, 67);
+  --color-secondary-600: rgb(162, 42, 54);
+  --color-secondary-700: rgb(122, 31, 40);
+  --color-secondary-800: rgb(81, 21, 27);
+  --color-secondary-900: rgb(41, 10, 13);
+
+  --color-accent-50: rgb(238, 243, 246);
+  --color-accent-100: rgb(222, 231, 237);
+  --color-accent-200: rgb(189, 207, 219);
+  --color-accent-300: rgb(156, 183, 201);
+  --color-accent-400: rgb(122, 159, 184);
+  --color-accent-500: rgb(89, 135, 166);
+  --color-accent-600: rgb(71, 108, 133);
+  --color-accent-700: rgb(54, 81, 99);
+  --color-accent-800: rgb(36, 54, 66);
+  --color-accent-900: rgb(18, 27, 33);
+
+  --color-background-50: rgb(245, 239, 239);
+  --color-background-100: rgb(235, 224, 224);
+  --color-background-200: rgb(215, 193, 193);
+  --color-background-300: rgb(195, 162, 162);
+  --color-background-400: rgb(175, 131, 131);
+  --color-background-500: rgb(156, 99, 99);
+  --color-background-600: rgb(124, 80, 80);
+  --color-background-700: rgb(93, 60, 60);
+  --color-background-800: rgb(62, 40, 40);
+  --color-background-900: rgb(31, 20, 20);
+
+  --color-shade-8-7: #2f4858;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Typography */
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
+  /* Border radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Shadows */
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+body,
+html {
+  scroll-behavior: smooth;
+}

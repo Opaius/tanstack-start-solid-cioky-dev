@@ -1,0 +1,52 @@
+{
+  "name": "./",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint",
+    "format": "prettier",
+    "check": "prettier --write . && eslint --fix",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@kobalte/core": "^0.13.11",
+    "@sentry/solid": "^10.17.0",
+    "@t3-oss/env-core": "^0.13.8",
+    "@tailwindcss/vite": "^4.0.6",
+    "@tanstack/router-plugin": "^1.133.21",
+    "@tanstack/solid-form": "^1.0.0",
+    "@tanstack/solid-query": "^5.66.0",
+    "@tanstack/solid-query-devtools": "^5.66.0",
+    "@tanstack/solid-router": "^1.133.20",
+    "@tanstack/solid-router-devtools": "^1.133.20",
+    "@tanstack/solid-start": "^1.132.25",
+    "@tanstack/solid-store": "^0.7.0",
+    "@tanstack/store": "^0.7.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "convex": "^1.27.3",
+    "convex-solidjs": "^0.0.3",
+    "gsap": "^3.13.0",
+    "lucide-solid": "^0.544.0",
+    "motion": "^12.23.24",
+    "ogl": "^1.0.11",
+    "solid-js": "^1.9.9",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.0.6",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@tanstack/eslint-config": "^0.3.2",
+    "prettier": "^3.5.3",
+    "typescript": "^5.7.2",
+    "vite": "^7.1.7",
+    "vite-plugin-solid": "^2.11.10",
+    "@inlang/paraglide-js": "2.4.0"
+  }
+}

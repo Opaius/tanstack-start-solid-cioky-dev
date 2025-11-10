@@ -1,0 +1,21 @@
+{
+  "projectName": "./",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "bun",
+  "addOnOptions": {},
+  "git": true,
+  "version": 1,
+  "framework": "solid",
+  "chosenAddOns": [
+    "eslint",
+    "start",
+    "sentry",
+    "t3env",
+    "tanstack-query",
+    "store",
+    "form",
+    "convex"
+  ]
+}
