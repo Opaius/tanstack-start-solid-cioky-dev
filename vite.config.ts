@@ -5,7 +5,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 import { tanstackStart } from '@tanstack/solid-start/plugin/vite'
 import solidPlugin from 'vite-plugin-solid'
-import { nitroV2Plugin } from '@tanstack/nitro-v2-vite-plugin'
 
 export default defineConfig({
   plugins: [
@@ -17,7 +16,6 @@ export default defineConfig({
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
-    nitroV2Plugin({ preset: 'bun' }),
     tailwindcss(),
     tanstackStart(),
     solidPlugin({ ssr: true }),

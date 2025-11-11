@@ -171,8 +171,8 @@ interface InMemoryAsset {
  */
 interface PreloadResult {
   routes: Record<string, (req: Request) => Response | Promise<Response>>
-  loaded: AssetMetadata[]
-  skipped: AssetMetadata[]
+  loaded: Array<AssetMetadata>
+  skipped: Array<AssetMetadata>
 }
 
 /**
@@ -286,8 +286,8 @@ async function initializeStaticRoutes(
 ): Promise<PreloadResult> {
   const routes: Record<string, (req: Request) => Response | Promise<Response>> =
     {}
-  const loaded: AssetMetadata[] = []
-  const skipped: AssetMetadata[] = []
+  const loaded: Array<AssetMetadata> = []
+  const skipped: Array<AssetMetadata> = []
 
   log.info(`Loading static assets from ${clientDirectory}...`)
   if (VERBOSE) {
