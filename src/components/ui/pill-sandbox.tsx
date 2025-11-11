@@ -1,56 +1,65 @@
-import {
-  Index,
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-  onMount,
-} from 'solid-js'
+import { Index, createEffect, createMemo, onCleanup, onMount } from 'solid-js'
 import clsx from 'clsx'
-import { Box, Circle, Math, MouseJoint, Vec2, World } from 'planck' // Circle is needed
+import { Box, Circle, MouseJoint, Vec2, World } from 'planck'
 import { createDeviceSize } from '../../lib/createDeviceSize'
 import type { Body } from 'planck'
 import type { Component, JSX } from 'solid-js'
 
-// --- Mock Data ---
-const categories = [
-  'my_core_identity',
-  'my_core_strengths',
-  'my_traits_and_interests',
-]
-const whoAmIPills = Array.from({ length: 60 }, (_, i) => ({
-  text: `Pill ${i + 1}`,
-  category: categories[Math.floor(Math.random() * categories.length)],
-  size: ['sm', 'md', 'lg'][Math.floor(Math.random() * 3)],
-}))
+const SCALE_FACTOR = 50
 
-// --- Helper Functions ---
-const categoryColorMap = (category: string) => {
-  if (category === categories[0]) return 'var(--color-primary)'
-  if (category === categories[1]) return 'var(--color-secondary)'
-  if (category === categories[2]) return 'var(--color-accent)'
-  return 'var(--color-primary)'
+export type Pill = {
+  text: string
+  category: string
+  size: 'sm' | 'md' | 'lg'
 }
 
-const SCALE_FACTOR = 50
+export type Category = {
+  name: string
+  color: string
+}
+
+type PillSandboxProps = {
+  pills: Array<Pill>
+  categories: Array<Category>
+  containerClass?: string
+  pillClass?: string
+  physicsOptions?: {
+    restitution?: number
+    friction?: number
+    density?: number
+    linearDamping?: number
+    tiltFactor?: number
+    maxVisualRotation?: number
+  }
+}
 
 type PlanckPill = {
   dom: HTMLDivElement
   body: Body
 }
 
-export const PillSandbox: Component = () => {
+export const PillSandbox: Component<PillSandboxProps> = (props) => {
   let containerRef: HTMLDivElement | undefined
   const pillRefs: Array<HTMLDivElement> = []
-  let worldRef: World | undefined
   const deviceSize = createDeviceSize()
   const widthDependency = createMemo(() => deviceSize.size())
-  const [pillRotations, setPillRotations] = createSignal(
-    new Map<HTMLDivElement, { current: number }>(),
-  )
+  const pillRotations: Map<HTMLDivElement, { current: number }> = new Map()
+
+  // Default physics options
+  const defaultPhysicsOptions = {
+    restitution: 0.7,
+    friction: 0.1,
+    density: 0.5,
+    linearDamping: 0.1,
+    tiltFactor: 0.05,
+    maxVisualRotation: (Math.PI / 180) * 15,
+  }
+
+  // Merge default options with user-provided options
+  const physicsOptions = { ...defaultPhysicsOptions, ...props.physicsOptions }
 
   createEffect(() => {
-    const currentWidth = widthDependency()
+    widthDependency()
     let cleanup: (() => void) | undefined
 
     onMount(() => {
@@ -63,70 +72,66 @@ export const PillSandbox: Component = () => {
 
       // 1. Create World
       const world = new World({ gravity: { x: 0, y: 0 } })
-      worldRef = world
       const groundBody = world.createBody().setStatic()
 
       // 2. Create Walls
-      // --- CHANGED: Increased wall bounciness ---
-      const walls = [
-        // Top wall
-        world
-          .createBody({ position: { x: w / 2, y: -wallThickness / 2 } })
-          .setStatic()
-          .createFixture(new Box(w / 2, wallThickness / 2), {
-            restitution: 0.5, // Was 0.2
-          }),
-        // Bottom wall
-        world
-          .createBody({ position: { x: w / 2, y: h + wallThickness / 2 } })
-          .setStatic()
-          .createFixture(new Box(w / 2, wallThickness / 2), {
-            restitution: 0.5, // Was 0.2
-          }),
-        // Left wall
-        world
-          .createBody({ position: { x: -wallThickness / 2, y: h / 2 } })
-          .setStatic()
-          .createFixture(new Box(wallThickness / 2, h / 2), {
-            restitution: 0.5, // Was 0.2
-          }),
-        // Right wall
-        world
-          .createBody({ position: { x: w + wallThickness / 2, y: h / 2 } })
-          .setStatic()
-          .createFixture(new Box(wallThickness / 2, h / 2), {
-            restitution: 0.5, // Was 0.2
-          }),
-      ]
+      const wallRestitution = physicsOptions.restitution || 0.5
+
+      // Top wall
+      world
+        .createBody({ position: { x: w / 2, y: -wallThickness / 2 } })
+        .setStatic()
+        .createFixture(new Box(w / 2, wallThickness / 2), {
+          restitution: wallRestitution,
+        })
+
+      // Bottom wall
+      world
+        .createBody({ position: { x: w / 2, y: h + wallThickness / 2 } })
+        .setStatic()
+        .createFixture(new Box(w / 2, wallThickness / 2), {
+          restitution: wallRestitution,
+        })
+
+      // Left wall
+      world
+        .createBody({ position: { x: -wallThickness / 2, y: h / 2 } })
+        .setStatic()
+        .createFixture(new Box(wallThickness / 2, h / 2), {
+          restitution: wallRestitution,
+        })
+
+      // Right wall
+      world
+        .createBody({ position: { x: w + wallThickness / 2, y: h / 2 } })
+        .setStatic()
+        .createFixture(new Box(wallThickness / 2, h / 2), {
+          restitution: wallRestitution,
+        })
 
       // 3. Create Dynamic Bodies for Pills
       const planckPills: Array<PlanckPill> = []
-      pillRotations().clear()
+      pillRotations.clear()
 
-      pillRefs.forEach((pillEl, index) => {
+      pillRefs.forEach((pillEl) => {
         const { offsetWidth, offsetHeight } = pillEl
         const width = offsetWidth / SCALE_FACTOR
         const height = offsetHeight / SCALE_FACTOR
         const radius = height / 2
-
         const startX = w / 2 + (Math.random() - 0.5) * w * 0.5
         const startY = h / 2 + (Math.random() - 0.5) * h * 0.5
-
         const body = world.createDynamicBody({
           position: { x: startX, y: startY },
         })
-
-        // This prevents physics rotation, same as `inertia: Infinity`
         body.setFixedRotation(true)
 
-        // --- CHANGED: Fixture properties now match your matter-js inspiration ---
         const fixtureProps = {
-          restitution: 0.7, // Bouncy! (Was 0.1)
-          friction: 0.1, // Slippery (Was 0.9)
-          density: 0.5, // Kept density reasonable (Was 0.8)
+          restitution: physicsOptions.restitution,
+          friction: physicsOptions.friction,
+          density: physicsOptions.density,
         }
 
-        // The "Capsule" shape logic is still correct and matches `chamfer`
+        // Capsule shape logic
         if (width > height) {
           const rectWidth = width - height
           body.createFixture(new Box(rectWidth / 2, radius), fixtureProps)
@@ -142,11 +147,9 @@ export const PillSandbox: Component = () => {
           body.createFixture(new Circle(radius), fixtureProps)
         }
 
-        // --- CHANGED: Damping and Impulse ---
-        body.setLinearDamping(0.1) // Much less "syrupy" (Was 0.8)
+        body.setLinearDamping(physicsOptions.linearDamping || 0.1)
 
-        // Apply a smaller impulse, as there's less damping
-        const forceMagnitude = 3 // Was 5
+        const forceMagnitude = 3
         const angle = Math.random() * Math.PI * 2
         const impulse = new Vec2(
           Math.cos(angle) * forceMagnitude,
@@ -155,11 +158,12 @@ export const PillSandbox: Component = () => {
         body.applyLinearImpulse(impulse, body.getPosition())
 
         planckPills.push({ dom: pillEl, body })
-        pillRotations().set(pillEl, { current: 0 })
+        pillRotations.set(pillEl, { current: 0 })
       })
 
-      // 4. Mouse Dragging (No changes needed)
+      // 4. Mouse Dragging
       let mouseJoint: MouseJoint | null = null
+
       const getMousePos = (e: MouseEvent | TouchEvent) => {
         const rect = container.getBoundingClientRect()
         const clientX = 'clientX' in e ? e.clientX : e.touches[0].clientX
@@ -186,7 +190,6 @@ export const PillSandbox: Component = () => {
         if (!target.closest('.pill')) return
         e.preventDefault()
         const point = getMousePos(e)
-
         for (const { body } of planckPills) {
           let fixtureAtPoint = false
           let currentFixture = body.getFixtureList()
@@ -197,7 +200,6 @@ export const PillSandbox: Component = () => {
             }
             currentFixture = currentFixture.getNext()
           }
-
           if (fixtureAtPoint) {
             mouseJoint = world.createJoint(
               new MouseJoint({
@@ -234,30 +236,23 @@ export const PillSandbox: Component = () => {
       // 5. Sync Loop
       let frameId: number
       const TIME_STEP = 1 / 60
-      const maxVisualRotation = (Math.PI / 180) * 15
-      // --- CHANGED: Reduced tilt factor to be more subtle, like your example ---
-      const tiltFactor = 0.05 // Was 0.3
-      const rotationSmoothing = 0.1
-
       const syncLoop = () => {
         world.step(TIME_STEP)
-
         planckPills.forEach(({ dom, body }) => {
           const pos = body.getPosition()
           const vel = body.getLinearVelocity()
-
-          // We let the physics engine handle all collisions and boundaries
           const translateX = pos.x * SCALE_FACTOR - dom.offsetWidth / 2
           const translateY = pos.y * SCALE_FACTOR - dom.offsetHeight / 2
-
-          const rotationState = pillRotations().get(dom)
+          const rotationState = pillRotations.get(dom)
           if (rotationState) {
-            // This logic is the same as your example
-            const targetRotation = vel.x * tiltFactor
+            const targetRotation = vel.x * (physicsOptions.tiltFactor || 0.05)
+            const maxRotation =
+              physicsOptions.maxVisualRotation || (Math.PI / 180) * 15
             const clampedTargetRotation = Math.min(
-              Math.max(targetRotation, -maxVisualRotation),
-              maxVisualRotation,
+              Math.max(targetRotation, -maxRotation),
+              maxRotation,
             )
+            const rotationSmoothing = 0.1
             rotationState.current +=
               (clampedTargetRotation - rotationState.current) *
               rotationSmoothing
@@ -265,7 +260,6 @@ export const PillSandbox: Component = () => {
             dom.style.willChange = 'transform'
           }
         })
-
         frameId = requestAnimationFrame(syncLoop)
       }
 
@@ -293,39 +287,34 @@ export const PillSandbox: Component = () => {
     }
   }
 
-  // --- JSX is unchanged ---
+  // 3. Render JSX
   return (
-    <div class="relative">
+    <div class={clsx('relative', props.containerClass)}>
       <div class="left-0 top-0 p-6 gap-10">
         <div class="*:p-4 *:bg-gray-600/50 flex flex-wrap items-center justify-center gap-5 w-full">
           <div class="rounded-full text-center">GuideMap</div>
-          <Index each={categories}>
-            {(cat) => {
-              const name = cat().replace(/_/g, ' ')
-              return (
-                <div class="rounded-full justify-center w-max capitalize flex items-center gap-2">
-                  {name}
-                  <div
-                    class="w-5 h-5 rounded-full"
-                    style={{
-                      background: categoryColorMap(cat()),
-                    }}
-                  ></div>
-                </div>
-              )
-            }}
+          <Index each={props.categories}>
+            {(category) => (
+              <div class="rounded-full justify-center w-max capitalize flex items-center gap-2">
+                {category().name.replace(/_/g, ' ')}
+                <div
+                  class="w-5 h-5 rounded-full"
+                  style={{ background: category().color }}
+                ></div>
+              </div>
+            )}
           </Index>
         </div>
       </div>
       <div
         ref={containerRef}
-        class="physics-container relative w-full h-full overflow-hidden"
+        class={clsx(
+          'physics-container relative w-full h-full overflow-hidden',
+          props.containerClass,
+        )}
         onMouseDown={handleMouseDown}
-        style={{
-          height: deviceSize.compare('<', 'md') ? '80vh' : '150vh',
-        }}
       >
-        <Index each={whoAmIPills}>
+        <Index each={props.pills}>
           {(item, index) => (
             <div
               ref={(el) => (pillRefs[index] = el)}
@@ -343,9 +332,12 @@ export const PillSandbox: Component = () => {
                   'text-xs lg:text-sm px-4 py-2 lg:px-5 lg:py-2':
                     item().size === 'sm',
                 },
+                props.pillClass,
               )}
               style={{
-                background: categoryColorMap(item().category),
+                background: props.categories.find(
+                  (cat) => cat.name === item().category,
+                )?.color,
                 color: 'var(--color-secondary-foreground)',
               }}
             >

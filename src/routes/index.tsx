@@ -3,7 +3,7 @@ import { CardNav } from '../components/ui/card-nav'
 import { Button } from '../components/ui/button'
 import Particles from '../components/ui/particle-background'
 import { ProfileCard } from '../components/profile-card'
-import { PillSandbox } from '../components/ui/pill-sandbox'
+import { WhoAmIPills } from '../components/who-am-i-pills'
 
 export const Route = createFileRoute('/')({ component: App })
 
@@ -94,7 +94,7 @@ function App() {
           </div>
         </div>
       </div>
-      <PillSandbox />
+      <WhoAmIPills />
     </div>
   )
 }
