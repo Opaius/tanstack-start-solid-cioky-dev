@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { CardNav } from '../components/card-nav'
+import { CardNav } from '../components/ui/card-nav'
 import { Button } from '../components/ui/button'
-import Particles from '../components/particle-background'
-import LetterGlitch from '../components/letter-glitch'
+import Particles from '../components/ui/particle-background'
+import { ProfileCard } from '../components/profile-card'
+import { PillSandbox } from '../components/ui/pill-sandbox'
 
 export const Route = createFileRoute('/')({ component: App })
 
@@ -72,31 +73,28 @@ function App() {
         button={<Button>Button</Button>}
         items={items}
       />
-      <div class="absolute inset-0 w-full h-full">
-        <Particles
-          particleColors={[
-            'var(--color-secondary)',
-            'var(--color-primary)',
-            'var(--color-accent)',
-          ]}
-          particleCount={1000}
-          particleSpread={10}
-          speed={0.1}
-          particleBaseSize={100}
-          moveParticlesOnHover={true}
-          alphaParticles={false}
-          disableRotation={false}
-        />
+      <div class="relative w-full h-screen">
+        <div class="absolute inset-0 w-full h-full">
+          <Particles
+            particleColors={[
+              'var(--color-secondary)',
+              'var(--color-primary)',
+              'var(--color-accent)',
+            ]}
+            particleCount={1000}
+            particleSpread={10}
+            speed={0.1}
+            particleBaseSize={100}
+            moveParticlesOnHover={true}
+            alphaParticles={false}
+            disableRotation={false}
+          />
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <ProfileCard />
+          </div>
+        </div>
       </div>
-      <LetterGlitch
-        glitchColors={[
-          'var(--color-primary)',
-          'var(--color-secondary)',
-          'var(--color-accent)',
-        ]}
-        updateFrequency={0.05}
-        gridColumns={20}
-      />
+      <PillSandbox />
     </div>
   )
 }

@@ -8,7 +8,9 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     rewrite: {
-      input: ({ url }) => deLocalizeUrl(url),
+      input: ({ url }) => {
+        return deLocalizeUrl(url)
+      },
       output: ({ url }) => localizeUrl(url),
     },
     scrollRestoration: true,

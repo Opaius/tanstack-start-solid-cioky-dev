@@ -8,8 +8,8 @@
  * by using a canvas and minimizing redraws.
  */
 import { Show, createEffect, mergeProps, onCleanup, onMount } from 'solid-js'
-import { getComputedColor, hexToRgb, interpolateColor } from '../lib/utils'
-import { createDeviceSize } from '../lib/createDeviceSize'
+import { getComputedColor, hexToRgb, interpolateColor } from '../../lib/utils'
+import { createDeviceSize } from '../../lib/createDeviceSize'
 import type { Component } from 'solid-js'
 
 // --- Component Props Interface ---
@@ -221,6 +221,8 @@ const LetterGlitch: Component<LetterGlitchProps> = (props) => {
    * @returns {boolean} `true` if any letter's color was updated, indicating a redraw is needed.
    */
   const handleSmoothTransitions = () => {
+    if (typeof window === 'undefined' || typeof document == 'undefined')
+      return false
     let needsRedraw = false
     letters.forEach((letter) => {
       if (letter.colorProgress < 1) {

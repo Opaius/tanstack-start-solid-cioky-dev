@@ -20,8 +20,8 @@ import {
 } from 'solid-js'
 import { LucideArrowUpRight } from 'lucide-solid'
 import { gsap } from 'gsap'
-import { createDeviceSize } from '../lib/createDeviceSize'
-import { cn } from '../lib/utils'
+import { createDeviceSize } from '../../lib/createDeviceSize'
+import { cn } from '../../lib/utils'
 import type { JSXElement, ParentComponent } from 'solid-js'
 
 // --- Constants ---

@@ -9,7 +9,7 @@ import {
 } from 'solid-js'
 import { Camera, Geometry, Mesh, Program, Renderer } from 'ogl'
 import gsap from 'gsap'
-import { hexToRgb } from '../lib/utils'
+import { hexToRgb } from '../../lib/utils'
 import type { Component } from 'solid-js'
 
 /**
@@ -188,6 +188,12 @@ const Particles: Component<ParticlesProps> = (props) => {
   // Memoize expensive particle data generation.
   // This recalculates only when particleCount or particleColors change.
   const particleData = createMemo(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined')
+      return {
+        positions: new Float32Array([]),
+        randoms: new Float32Array([]),
+        colors: new Float32Array([]),
+      }
     const count = merged.particleCount
     const positions = new Float32Array(count * 3)
     const randoms = new Float32Array(count * 4)
@@ -234,7 +240,6 @@ const Particles: Component<ParticlesProps> = (props) => {
 
     const container = containerRef
     const data = particleData() // Depend on memoized data.
-
     const renderer = new Renderer({ depth: false, alpha: true })
     const gl = renderer.gl
     container.appendChild(gl.canvas)
