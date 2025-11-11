@@ -17,6 +17,7 @@
     "@sentry/solid": "^10.17.0",
     "@t3-oss/env-core": "^0.13.8",
     "@tailwindcss/vite": "^4.0.6",
+    "@tanstack/nitro-v2-vite-plugin": "^1.133.19",
     "@tanstack/router-plugin": "^1.133.21",
     "@tanstack/solid-form": "^1.0.0",
     "@tanstack/solid-query": "^5.66.0",

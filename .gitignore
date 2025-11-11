@@ -7,3 +7,4 @@ dist-ssr
 .nitro
 .tanstack
 .wrangler
+.output
