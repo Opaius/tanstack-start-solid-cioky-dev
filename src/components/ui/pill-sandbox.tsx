@@ -1,11 +1,12 @@
 import { Index, createEffect, createMemo, onCleanup, onMount } from 'solid-js'
 import clsx from 'clsx'
-import { Box, Circle, Math, Vec2, World } from 'planck' // Circle is needed
+import { Box, Circle, Math, Vec2, World } from 'planck'
 import { createDeviceSize } from '../../lib/createDeviceSize'
 import type { Body } from 'planck'
 import type { Component, JSX } from 'solid-js'
 
 const SCALE_FACTOR = 50
+const TIME_STEP = 1 / 60
 
 export type Pill = {
   text: string
@@ -36,6 +37,7 @@ type PillSandboxProps = {
 type PlanckPill = {
   dom: HTMLDivElement
   body: Body
+  rotation: number
 }
 
 export const PillSandbox: Component<PillSandboxProps> = (props) => {
@@ -43,20 +45,24 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
   const pillRefs: Array<HTMLDivElement> = []
   const deviceSize = createDeviceSize()
   const widthDependency = createMemo(() => deviceSize.size())
-  const pillRotations: Map<HTMLDivElement, { current: number }> = new Map()
 
-  // Default physics options
-  const defaultPhysicsOptions = {
-    restitution: 0.7,
-    friction: 0.1,
-    density: 0.5,
-    linearDamping: 0.1,
-    tiltFactor: 0.05,
-    maxVisualRotation: (Math.PI / 180) * 15,
-  }
+  // Memoize physics options
+  const physicsOptions = createMemo(() => ({
+    restitution: props.physicsOptions?.restitution ?? 0.7,
+    friction: props.physicsOptions?.friction ?? 0.1,
+    density: props.physicsOptions?.density ?? 0.5,
+    linearDamping: props.physicsOptions?.linearDamping ?? 0.1,
+    tiltFactor: props.physicsOptions?.tiltFactor ?? 0.05,
+    maxVisualRotation:
+      props.physicsOptions?.maxVisualRotation ?? (Math.PI / 180) * 15,
+  }))
 
-  // Merge default options with user-provided options
-  const physicsOptions = { ...defaultPhysicsOptions, ...props.physicsOptions }
+  // Memoize category color lookup
+  const categoryColorMap = createMemo(() => {
+    const map = new Map<string, string>()
+    props.categories.forEach((cat) => map.set(cat.name, cat.color))
+    return map
+  })
 
   createEffect(() => {
     widthDependency()
@@ -69,17 +75,41 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       const w = clientWidth / SCALE_FACTOR
       const h = clientHeight / SCALE_FACTOR
 
-      // 1. Create World
+      // Create World
       const world = new World({ gravity: { x: 0, y: 0 } })
-      world.createBody().setStatic()
+      const options = physicsOptions()
 
-      // 2. Create Walls
-      physicsOptions.restitution || 0.5
-      // Top, bottom, left, right wall creation (unchanged logic)
+      // Create Walls
+      const wallBody = world.createBody().setStatic()
+      const wallFixture = {
+        restitution: options.restitution,
+        friction: options.friction,
+      }
 
-      // 3. Create Dynamic Bodies for Pills
+      wallBody.createFixture(
+        new Box(w / 2, 0.1, new Vec2(w / 2, 0.05), 0),
+        wallFixture,
+      ) // Top
+      wallBody.createFixture(
+        new Box(w / 2, 0.1, new Vec2(w / 2, h - 0.05), 0),
+        wallFixture,
+      ) // Bottom
+      wallBody.createFixture(
+        new Box(0.1, h / 2, new Vec2(0.05, h / 2), 0),
+        wallFixture,
+      ) // Left
+      wallBody.createFixture(
+        new Box(0.1, h / 2, new Vec2(w - 0.05, h / 2), 0),
+        wallFixture,
+      ) // Right
+
+      // Create Dynamic Bodies for Pills
       const planckPills: Array<PlanckPill> = []
-      pillRotations.clear()
+      const fixtureProps = {
+        restitution: options.restitution,
+        friction: options.friction,
+        density: options.density,
+      }
 
       pillRefs.forEach((pillEl) => {
         const { offsetWidth, offsetHeight } = pillEl
@@ -88,16 +118,12 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         const radius = height / 2
         const startX = w / 2 + (Math.random() - 0.5) * w * 0.5
         const startY = h / 2 + (Math.random() - 0.5) * h * 0.5
+
         const body = world.createDynamicBody({
           position: { x: startX, y: startY },
         })
         body.setFixedRotation(true)
-
-        const fixtureProps = {
-          restitution: physicsOptions.restitution,
-          friction: physicsOptions.friction,
-          density: physicsOptions.density,
-        }
+        body.setLinearDamping(options.linearDamping)
 
         // Capsule shape logic
         if (width > height) {
@@ -115,56 +141,143 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           body.createFixture(new Circle(radius), fixtureProps)
         }
 
-        body.setLinearDamping(physicsOptions.linearDamping || 0.1)
-
+        // Apply initial impulse
         const forceMagnitude = 3
         const angle = Math.random() * Math.PI * 2
-        const impulse = new Vec2(
-          Math.cos(angle) * forceMagnitude,
-          Math.sin(angle) * forceMagnitude,
+        body.applyLinearImpulse(
+          new Vec2(
+            Math.cos(angle) * forceMagnitude,
+            Math.sin(angle) * forceMagnitude,
+          ),
+          body.getPosition(),
         )
-        body.applyLinearImpulse(impulse, body.getPosition())
 
-        planckPills.push({ dom: pillEl, body })
-        pillRotations.set(pillEl, { current: 0 })
+        planckPills.push({ dom: pillEl, body, rotation: 0 })
       })
 
-      // 4. Mouse Dragging (unchanged logic)
+      // Mouse/Touch Interaction with spring-based dragging
+      let mouseBody: Body | null = null
+      let isDragging = false
+      let targetMousePos = new Vec2(0, 0)
+      const springStiffness = 30
+      const springDamping = 10
 
-      // 5. Sync Loop
-      let frameId: number
-      const TIME_STEP = 1 / 60
-      const syncLoop = () => {
-        world.step(TIME_STEP)
-        planckPills.forEach(({ dom, body }) => {
-          const pos = body.getPosition()
-          const vel = body.getLinearVelocity()
-          const translateX = pos.x * SCALE_FACTOR - dom.offsetWidth / 2
-          const translateY = pos.y * SCALE_FACTOR - dom.offsetHeight / 2
-          const rotationState = pillRotations.get(dom)
-          if (rotationState) {
-            const targetRotation = vel.x * (physicsOptions.tiltFactor || 0.05)
-            const maxRotation =
-              physicsOptions.maxVisualRotation || (Math.PI / 180) * 15
-            const clampedTargetRotation = Math.min(
-              Math.max(targetRotation, -maxRotation),
-              maxRotation,
-            )
-            const rotationSmoothing = 0.1
-            rotationState.current +=
-              (clampedTargetRotation - rotationState.current) *
-              rotationSmoothing
-            dom.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${rotationState.current}rad)`
-            dom.style.willChange = 'transform'
+      const getPointerPosition = (
+        e: MouseEvent | TouchEvent,
+      ): { x: number; y: number } => {
+        const rect = container.getBoundingClientRect()
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+        return {
+          x: (clientX - rect.left) / SCALE_FACTOR,
+          y: (clientY - rect.top) / SCALE_FACTOR,
+        }
+      }
+
+      const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+        const pos = getPointerPosition(e)
+
+        planckPills.forEach(({ body, dom }) => {
+          const rect = dom.getBoundingClientRect()
+          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+
+          // Check if pointer is within pill's visual bounds
+          if (
+            clientX >= rect.left &&
+            clientX <= rect.right &&
+            clientY >= rect.top &&
+            clientY <= rect.bottom
+          ) {
+            mouseBody = body
+            isDragging = true
+            targetMousePos = new Vec2(pos.x, pos.y)
+            body.setLinearVelocity(new Vec2(0, 0))
           }
         })
+      }
+
+      const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+        if (!isDragging || !mouseBody) return
+
+        const pos = getPointerPosition(e)
+        targetMousePos = new Vec2(pos.x, pos.y)
+      }
+
+      const handlePointerUp = () => {
+        isDragging = false
+        mouseBody = null
+      }
+
+      container.addEventListener('mousedown', handlePointerDown)
+      container.addEventListener('mousemove', handlePointerMove)
+      container.addEventListener('mouseup', handlePointerUp)
+      container.addEventListener('mouseleave', handlePointerUp)
+      container.addEventListener('touchstart', handlePointerDown, {
+        passive: true,
+      })
+      container.addEventListener('touchmove', handlePointerMove, {
+        passive: true,
+      })
+      container.addEventListener('touchend', handlePointerUp)
+
+      // Optimized Sync Loop with smooth dragging
+      let frameId: number
+      const rotationSmoothing = 0.1
+      const maxRotation = options.maxVisualRotation
+      const tiltFactor = options.tiltFactor
+
+      const syncLoop = () => {
+        world.step(TIME_STEP)
+
+        // Apply spring force for dragging
+        if (isDragging && mouseBody) {
+          const bodyPos = mouseBody.getPosition()
+          const bodyVel = mouseBody.getLinearVelocity()
+
+          // Spring force calculation
+          const dx = targetMousePos.x - bodyPos.x
+          const dy = targetMousePos.y - bodyPos.y
+
+          // Apply smooth spring force with damping
+          const forceX = dx * springStiffness - bodyVel.x * springDamping
+          const forceY = dy * springStiffness - bodyVel.y * springDamping
+
+          mouseBody.applyForceToCenter(new Vec2(forceX, forceY))
+        }
+
+        planckPills.forEach((pill) => {
+          const pos = pill.body.getPosition()
+          const vel = pill.body.getLinearVelocity()
+
+          // Calculate transform
+          const translateX = pos.x * SCALE_FACTOR - pill.dom.offsetWidth / 2
+          const translateY = pos.y * SCALE_FACTOR - pill.dom.offsetHeight / 2
+
+          // Update rotation with smoothing
+          const targetRotation = Math.max(
+            Math.min(vel.x * tiltFactor, maxRotation),
+            -maxRotation,
+          )
+          pill.rotation += (targetRotation - pill.rotation) * rotationSmoothing
+
+          // Apply transform
+          pill.dom.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${pill.rotation}rad)`
+        })
+
         frameId = requestAnimationFrame(syncLoop)
       }
       syncLoop()
 
       cleanup = () => {
         cancelAnimationFrame(frameId)
-        // Remove event listeners (unchanged logic)
+        container.removeEventListener('mousedown', handlePointerDown)
+        container.removeEventListener('mousemove', handlePointerMove)
+        container.removeEventListener('mouseup', handlePointerUp)
+        container.removeEventListener('mouseleave', handlePointerUp)
+        container.removeEventListener('touchstart', handlePointerDown)
+        container.removeEventListener('touchmove', handlePointerMove)
+        container.removeEventListener('touchend', handlePointerUp)
       }
     })
 
@@ -179,23 +292,26 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
     }
   }
 
-  // 3. Render JSX
   return (
-    <div class={clsx('relative', props.containerClass)}>
-      {props.categories.map((category) => (
-        <div class="left-0 top-0 p-6 gap-10">
-          <div class="*:p-4 *:bg-gray-600/50 flex flex-wrap items-center justify-center gap-5 w-full">
-            <div class="rounded-full text-center">GuideMap</div>
-            <div class="rounded-full justify-center w-max capitalize flex items-center gap-2">
-              {category.name.replace(/_/g, ' ')}
-              <div
-                class="w-5 h-5 rounded-full"
-                style={{ background: category.color }}
-              ></div>
-            </div>
+    <div
+      class={clsx(
+        'relative flex flex-wrap w-full items-center justify-center',
+        props.containerClass,
+      )}
+    >
+      {' '}
+      <div class="*:p-4 *:bg-gray-600/50 flex items-center justify-center gap-5 w-full">
+        <div class="rounded-full text-center p-4 bg-gray-600/50">GuideMap</div>
+        {props.categories.map((category) => (
+          <div class="rounded-full justify-center w-max capitalize flex items-center gap-2">
+            {category.name.replace(/_/g, ' ')}
+            <div
+              class="w-5 h-5 rounded-full"
+              style={{ background: category.color }}
+            />
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       <div
         ref={containerRef}
         class={clsx(
@@ -216,7 +332,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
                 'font-medium leading-none rounded-full',
                 'transition-[background,border-radius,font-family] duration-300 ease-in-out',
                 'border border-white/20 backdrop-blur-md shadow-xl',
-                'cursor-grab',
+                'cursor-grab active:cursor-grabbing',
                 {
                   'text-2xl lg:text-3xl px-7 py-4 lg:px-9 lg:py-5':
                     item().size === 'lg',
@@ -228,9 +344,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
                 props.pillClass,
               )}
               style={{
-                background: props.categories.find(
-                  (cat) => cat.name === item().category,
-                )?.color,
+                background: categoryColorMap().get(item().category),
                 color: 'var(--color-secondary-foreground)',
               }}
             >
