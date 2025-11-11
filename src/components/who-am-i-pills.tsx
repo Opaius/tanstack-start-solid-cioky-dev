@@ -54,7 +54,7 @@ export function WhoAmIPills() {
     <PillSandbox
       pills={whoAmIPills}
       categories={categories}
-      containerClass="w-full h-[150vh] md:h-[90vh]"
+      containerClass="w-full h-[100vh] md:h-[90vh]"
     />
   )
 }

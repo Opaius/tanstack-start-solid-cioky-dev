@@ -416,10 +416,6 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           props.containerClass,
         )}
         onMouseDown={handleMouseDown}
-        style={{
-          // Adjust height on mobile for better viewing.
-          height: deviceSize.compare('<', 'md') ? '80vh' : '150vh',
-        }}
       >
         <Index each={props.pills}>
           {(item, index) => (
