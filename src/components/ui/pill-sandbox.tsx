@@ -1,12 +1,9 @@
 /**
- * @file pill-sandbox.tsx
- * @description A SolidJS component that renders a physics-based "sandbox" of interactive "pills".
- *
- * This component uses the `planck.js` physics engine to simulate a 2D world where pills (representing skills,
- * topics, etc.) float around and can be dragged by the user. It's designed to be a visually engaging way
- * to display a collection of items. The simulation is responsive and re-initializes on window resize.
+ * @file PillSandbox.tsx
+ * @description A SolidJS component that renders "pills" (tags, skills, etc.)
+ * in a 2D physics sandbox using Planck.js. The pills are interactive,
+ * can be dragged, and collide with each other and the container walls.
  */
-
 import { Index, createEffect, createMemo, onCleanup, onMount } from 'solid-js'
 import clsx from 'clsx'
 import { Box, Circle, Math, Vec2, World } from 'planck'
@@ -14,20 +11,26 @@ import { createDeviceSize } from '../../lib/createDeviceSize'
 import type { Body } from 'planck'
 import type { Component, JSX } from 'solid-js'
 
-// --- CONSTANTS ---
+// --- Constants ---
+
 /**
- * The scale factor to convert between physics world units and pixel units.
+ * The scale factor to convert between physics world coordinates and pixel coordinates.
  * Planck.js works best with small values, so we scale down our pixel dimensions.
+ * @type {number}
  */
 const SCALE_FACTOR = 50
+
 /**
- * The time step for the physics simulation, aiming for 60 updates per second.
+ * The time step for the physics simulation, in seconds.
+ * A value of 1/60 corresponds to a 60 FPS update rate.
+ * @type {number}
  */
 const TIME_STEP = 1 / 60
 
-// --- TYPES ---
+// --- Types ---
+
 /**
- * Represents a single pill to be rendered in the sandbox.
+ * Represents a single pill to be displayed in the sandbox.
  */
 export type Pill = {
   text: string
@@ -53,47 +56,57 @@ type PillSandboxProps = {
   pillClass?: string
   /** Fine-tune the physics simulation parameters. */
   physicsOptions?: {
-    restitution?: number // Bounciness
-    friction?: number // Surface friction
-    density?: number // Mass
-    linearDamping?: number // How much pills slow down over time
-    tiltFactor?: number // How much pills tilt based on velocity
-    maxVisualRotation?: number // Maximum visual tilt in radians
+    /** The bounciness of objects (0-1). */
+    restitution?: number
+    /** The friction between objects (0-1). */
+    friction?: number
+    /** The mass of objects. */
+    density?: number
+    /** Damps linear velocity over time, simulating air resistance. */
+    linearDamping?: number
+    /** How much the pill tilts based on its horizontal velocity. */
+    tiltFactor?: number
+    /** The maximum visual rotation of a pill in radians. */
+    maxVisualRotation?: number
   }
 }
 
 /**
- * Internal type to link a DOM element with its corresponding physics body.
+ * Internal type to link a DOM element to its corresponding Planck.js physics body.
  */
 type PlanckPill = {
   dom: HTMLDivElement
   body: Body
-  rotation: number // Visual rotation, separate from physics rotation
+  /** The current visual rotation in radians, smoothed for visual appeal. */
+  rotation: number
 }
 
 /**
- * A SolidJS component that creates an interactive, physics-based sandbox for displaying "pills".
+ * A SolidJS component that creates an interactive 2D physics sandbox for "pills".
+ * It uses Planck.js for the physics simulation and synchronizes the state of the
+ * physics bodies with the DOM elements.
  *
- * @param {PillSandboxProps} props - The component's properties.
- * @returns {JSX.Element} A container with floating, draggable pills.
+ * @param {PillSandboxProps} props - The component props.
+ * @returns {JSX.Element} The rendered physics sandbox container and pills.
  */
 export const PillSandbox: Component<PillSandboxProps> = (props) => {
-  // --- REFS & STATE ---
+  // --- Refs and Reactive State ---
   let containerRef: HTMLDivElement | undefined
   const pillRefs: Array<HTMLDivElement> = []
   const deviceSize = createDeviceSize()
+
   /**
-   * A memo that serves as a dependency for the main `createEffect`.
-   * This ensures the physics simulation re-initializes whenever the debounced window size changes,
-   * making the component responsive.
+   * A memo that tracks the window width. This is used to trigger a re-run
+   * of the physics simulation effect when the window is resized, allowing the
+   * sandbox to adapt to new dimensions.
    */
   const widthDependency = createMemo(() => deviceSize.size())
 
-  // --- MEMOS ---
+  // --- Memos for Expensive Computations ---
+
   /**
-   * Memoizes the physics options, providing default values for any omitted properties.
-   * This prevents the physics world from being re-created if the parent component re-renders
-   * without changing these specific props.
+   * Memoizes the physics options, providing default values for any
+   * options that are not provided in the props.
    */
   const physicsOptions = createMemo(() => ({
     restitution: props.physicsOptions?.restitution ?? 0.7,
@@ -106,8 +119,8 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
   }))
 
   /**
-   * Creates a fast lookup map for category colors.
-   * This is more efficient than searching the `categories` array every time a pill is rendered.
+   * Memoizes a Map for quick category color lookups.
+   * This prevents re-creating the map on every render.
    */
   const categoryColorMap = createMemo(() => {
     const map = new Map<string, string>()
@@ -115,53 +128,58 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
     return map
   })
 
-  // --- PHYSICS SIMULATION EFFECT ---
+  // --- Core Physics Simulation Effect ---
+
   /**
-   * The main effect that sets up and runs the Planck.js physics simulation.
-   * It runs on mount and re-runs whenever the `widthDependency` changes (i.e., on resize).
+   * This effect is the heart of the component. It sets up the Planck.js world,
+   * creates physics bodies for each pill, and runs the simulation loop.
+   * It re-runs whenever the `widthDependency` changes (i.e., on window resize).
    */
   createEffect(() => {
-    widthDependency() // Depend on the debounced window size.
+    // Depend on window width to re-initialize on resize.
+    widthDependency()
     let cleanup: (() => void) | undefined
 
-    // The simulation setup is wrapped in `onMount` to ensure DOM elements are available.
-    // The effect's re-triggering handles the responsive re-initialization.
+    // The simulation setup runs once the component is mounted.
     onMount(() => {
       if (!containerRef) return
       const container = containerRef
       const { clientWidth, clientHeight } = container
+      // Convert container dimensions to physics world scale.
       const w = clientWidth / SCALE_FACTOR
       const h = clientHeight / SCALE_FACTOR
 
-      // 1. Create the physics world with no gravity.
-      const world = new World({ gravity: { x: 0, y: 0 } })
+      // 1. --- Create the Physics World ---
+      const world = new World({ gravity: { x: 0, y: 0 } }) // No gravity
       const options = physicsOptions()
 
-      // 2. Create static walls to contain the pills.
+      // 2. --- Create Static Walls ---
+      // Create a single static body to hold all wall fixtures.
       const wallBody = world.createBody().setStatic()
       const wallFixture = {
         restitution: options.restitution,
         friction: options.friction,
       }
-      // Top, Bottom, Left, Right walls
+
+      // Add four fixtures (boxes) to the static body to form the walls.
       wallBody.createFixture(
         new Box(w / 2, 0.1, new Vec2(w / 2, 0.05), 0),
         wallFixture,
-      )
+      ) // Top
       wallBody.createFixture(
         new Box(w / 2, 0.1, new Vec2(w / 2, h - 0.05), 0),
         wallFixture,
-      )
+      ) // Bottom
       wallBody.createFixture(
         new Box(0.1, h / 2, new Vec2(0.05, h / 2), 0),
         wallFixture,
-      )
+      ) // Left
       wallBody.createFixture(
         new Box(0.1, h / 2, new Vec2(w - 0.05, h / 2), 0),
         wallFixture,
-      )
+      ) // Right
 
-      // 3. Create dynamic bodies for each pill.
+      // 3. --- Create Dynamic Bodies for Pills ---
       const planckPills: Array<PlanckPill> = []
       const fixtureProps = {
         restitution: options.restitution,
@@ -174,18 +192,20 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         const width = offsetWidth / SCALE_FACTOR
         const height = offsetHeight / SCALE_FACTOR
         const radius = height / 2
-        // Start pills in a random position near the center.
+        // Place pills randomly near the center.
         const startX = w / 2 + (Math.random() - 0.5) * w * 0.5
         const startY = h / 2 + (Math.random() - 0.5) * h * 0.5
 
         const body = world.createDynamicBody({
           position: { x: startX, y: startY },
         })
-        body.setFixedRotation(true) // Physics rotation is disabled; we handle visual rotation manually.
+        // Prevent pills from rotating based on physics collisions, as we control rotation visually.
+        body.setFixedRotation(true)
         body.setLinearDamping(options.linearDamping)
 
-        // Create a capsule shape for the pill body for more realistic collisions.
-        // This is composed of a central rectangle and two circles at the ends.
+        // --- Capsule Shape Logic ---
+        // Create a capsule shape for pills wider than they are tall.
+        // This is done by combining a central rectangle with a circle at each end.
         if (width > height) {
           const rectWidth = width - height
           body.createFixture(new Box(rectWidth / 2, radius), fixtureProps)
@@ -198,11 +218,11 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
             fixtureProps,
           )
         } else {
-          // If it's not wider than it is tall, just use a circle.
+          // For circular pills, a single circle fixture is sufficient.
           body.createFixture(new Circle(radius), fixtureProps)
         }
 
-        // Give each pill an initial random push to scatter them.
+        // Apply a random initial impulse to scatter the pills.
         const forceMagnitude = 3
         const angle = Math.random() * Math.PI * 2
         body.applyLinearImpulse(
@@ -216,14 +236,15 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         planckPills.push({ dom: pillEl, body, rotation: 0 })
       })
 
-      // 4. Set up mouse/touch interaction for dragging.
+      // 4. --- Mouse/Touch Interaction ---
+      // This system uses a "spring" force to drag bodies for a smoother feel.
       let mouseBody: Body | null = null
       let isDragging = false
       let targetMousePos = new Vec2(0, 0)
-      const springStiffness = 30
-      const springDamping = 10
+      const springStiffness = 60
+      const springDamping = 20
 
-      // Helper to get pointer position in physics world coordinates.
+      /** Converts pointer coordinates to physics world coordinates. */
       const getPointerPosition = (
         e: MouseEvent | TouchEvent,
       ): { x: number; y: number } => {
@@ -238,30 +259,35 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
       const handlePointerDown = (e: MouseEvent | TouchEvent) => {
         const pos = getPointerPosition(e)
-        // Find which pill (if any) was clicked on.
+
+        // Check if the pointer is inside any of the pill's DOM elements.
         planckPills.forEach(({ body, dom }) => {
           const rect = dom.getBoundingClientRect()
           const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
           const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
+          // Check if pointer is within pill's visual bounds
           if (
             clientX >= rect.left &&
             clientX <= rect.right &&
             clientY >= rect.top &&
             clientY <= rect.bottom
           ) {
+            e.preventDefault() // Prevent scrolling on mobile while dragging.
             mouseBody = body
             isDragging = true
             targetMousePos = new Vec2(pos.x, pos.y)
-            body.setLinearVelocity(new Vec2(0, 0)) // Stop the body to "grab" it.
+            body.setLinearVelocity(new Vec2(0, 0)) // Stop the body's momentum.
           }
         })
       }
 
       const handlePointerMove = (e: MouseEvent | TouchEvent) => {
         if (!isDragging || !mouseBody) return
-        // Just update the target position; the physics loop will apply the force.
+
+        e.preventDefault() // Prevent scrolling.
         const pos = getPointerPosition(e)
+        // Update the target position for the spring force.
         targetMousePos = new Vec2(pos.x, pos.y)
       }
 
@@ -270,57 +296,65 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         mouseBody = null
       }
 
-      // Add event listeners for both mouse and touch.
+      // Register all pointer event listeners.
       container.addEventListener('mousedown', handlePointerDown)
       container.addEventListener('mousemove', handlePointerMove)
       container.addEventListener('mouseup', handlePointerUp)
       container.addEventListener('mouseleave', handlePointerUp)
       container.addEventListener('touchstart', handlePointerDown, {
-        passive: true,
+        passive: false,
       })
       container.addEventListener('touchmove', handlePointerMove, {
-        passive: true,
+        passive: false,
       })
       container.addEventListener('touchend', handlePointerUp)
 
-      // 5. The main animation loop.
+      // 5. --- Sync Loop ---
+      // This loop runs on every animation frame to update the physics and sync the DOM.
       let frameId: number
       const rotationSmoothing = 0.1
       const maxRotation = options.maxVisualRotation
       const tiltFactor = options.tiltFactor
 
       const syncLoop = () => {
+        // Advance the physics simulation.
         world.step(TIME_STEP)
 
-        // If dragging, apply a spring force to move the body towards the mouse.
-        // This creates a smooth, "springy" dragging effect.
+        // Apply spring force if a body is being dragged.
         if (isDragging && mouseBody) {
           const bodyPos = mouseBody.getPosition()
           const bodyVel = mouseBody.getLinearVelocity()
+
+          // Calculate the distance between the mouse and the body's center.
           const dx = targetMousePos.x - bodyPos.x
           const dy = targetMousePos.y - bodyPos.y
+
+          // Apply a damped spring force (Hooke's Law) to pull the body towards the mouse.
           const forceX = dx * springStiffness - bodyVel.x * springDamping
           const forceY = dy * springStiffness - bodyVel.y * springDamping
+
           mouseBody.applyForceToCenter(new Vec2(forceX, forceY))
         }
 
-        // Sync DOM elements with their physics bodies.
+        // Sync each DOM pill with its physics body.
         planckPills.forEach((pill) => {
           const pos = pill.body.getPosition()
           const vel = pill.body.getLinearVelocity()
 
-          // Convert physics coordinates back to pixel coordinates for CSS transform.
+          // Calculate the pixel-based transform values.
           const translateX = pos.x * SCALE_FACTOR - pill.dom.offsetWidth / 2
           const translateY = pos.y * SCALE_FACTOR - pill.dom.offsetHeight / 2
 
-          // Calculate a pleasing visual rotation based on horizontal velocity.
+          // --- Visual Rotation ---
+          // Calculate a target rotation based on horizontal velocity for a "tilt" effect.
           const targetRotation = Math.max(
             Math.min(vel.x * tiltFactor, maxRotation),
             -maxRotation,
           )
-          // Apply smoothing (lerp) to the rotation for a less jerky effect.
+          // Smoothly interpolate to the target rotation for a less jerky animation.
           pill.rotation += (targetRotation - pill.rotation) * rotationSmoothing
 
+          // Apply the final transform to the DOM element.
           pill.dom.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${pill.rotation}rad)`
         })
 
@@ -328,7 +362,8 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       }
       syncLoop()
 
-      // 6. Define the cleanup function.
+      // --- Cleanup ---
+      // This function is returned to be called by onCleanup.
       cleanup = () => {
         cancelAnimationFrame(frameId)
         container.removeEventListener('mousedown', handlePointerDown)
@@ -341,15 +376,15 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       }
     })
 
-    // This runs when the effect is re-triggered or the component unmounts.
+    // When the effect re-runs (e.g., on resize), clean up the previous simulation.
     onCleanup(() => {
       if (cleanup) cleanup()
     })
   })
 
   /**
-   * Prevents the default browser behavior (like text selection) when a drag
-   * gesture starts on a pill.
+   * Prevents the default browser behavior (like text selection) when a mousedown
+   * event originates from a pill, ensuring it doesn't interfere with dragging.
    */
   const handleMouseDown: JSX.EventHandler<HTMLDivElement, MouseEvent> = (e) => {
     if ((e.target as HTMLElement).closest('.pill')) {
@@ -358,15 +393,10 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
   }
 
   return (
-    <div
-      class={clsx(
-        'relative flex flex-wrap w-full items-center justify-center',
-        props.containerClass,
-      )}
-    >
+    <div class={clsx('relative', props.containerClass)}>
       {/* Category Legend */}
-      <div class="*:p-4 *:bg-gray-600/50 flex items-center justify-center gap-5 w-full">
-        <div class="rounded-full text-center p-4 bg-gray-600/50">GuideMap</div>
+      <div class="*:p-4 *:bg-gray-600/50 flex flex-wrap items-center justify-center gap-5 w-full">
+        <div class="rounded-full text-center">GuideMap</div>
         {props.categories.map((category) => (
           <div class="rounded-full justify-center w-max capitalize flex items-center gap-2">
             {category.name.replace(/_/g, ' ')}
@@ -378,7 +408,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         ))}
       </div>
 
-      {/* Physics Container */}
+      {/* Physics Sandbox Container */}
       <div
         ref={containerRef}
         class={clsx(
@@ -396,13 +426,12 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
             <div
               ref={(el) => (pillRefs[index] = el)}
               class={clsx(
-                'pill absolute will-change-transform', // `will-change` is a performance hint for the browser.
+                'pill absolute will-change-transform',
                 'font-medium leading-none rounded-full',
                 'transition-[background,border-radius,font-family] duration-300 ease-in-out',
                 'border border-white/20 backdrop-blur-md shadow-xl',
                 'cursor-grab active:cursor-grabbing',
                 {
-                  // Dynamic classes for different pill sizes.
                   'text-2xl lg:text-3xl px-7 py-4 lg:px-9 lg:py-5':
                     item().size === 'lg',
                   'text-base lg:text-lg px-5 py-3 lg:px-6 lg:py-3':
@@ -413,7 +442,6 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
                 props.pillClass,
               )}
               style={{
-                // Use the memoized map for efficient color lookup.
                 background: categoryColorMap().get(item().category),
                 color: 'var(--color-secondary-foreground)',
               }}
