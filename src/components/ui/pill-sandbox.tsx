@@ -355,7 +355,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           pill.rotation += (targetRotation - pill.rotation) * rotationSmoothing
 
           // Apply the final transform to the DOM element.
-          pill.dom.style.transform = `translate3d(${translateX}px, ${translateY}px, 0px) rotate(${pill.rotation}rad)`
+          pill.dom.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${pill.rotation}rad)`
         })
 
         frameId = requestAnimationFrame(syncLoop)

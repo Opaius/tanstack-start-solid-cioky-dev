@@ -221,7 +221,7 @@ export const BgController: Component<BgControllerProps> = (props) => {
       }
 
       const sortedTriggers = [...currentTriggers].sort((a, b) =>
-        a.element.compareDocumentPosition(b.element) & 4 ? 1 : -1,
+        a.element.compareDocumentPosition(b.element) & 4 ? 1 : 1,
       )
 
       sortedTriggers.forEach((trigger, index) => {
