@@ -9,25 +9,22 @@ import {
   useContext, // Import createMemo
 } from 'solid-js'
 import { Dynamic, Portal } from 'solid-js/web'
-import { gsap } from 'gsap'
+import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { createClientOnlyFn } from '@tanstack/solid-start'
 import { getComputedColor } from '../../lib/utils'
 import type { Component, JSX, ParentProps } from 'solid-js'
 
-// --- Optimization 2: Safer GSAP Plugin Registration ---
-let isScrollTriggerRegistered = false
+
 
 /**
  * Registers ScrollTrigger if it hasn't been already.
  * We call this inside the component to ensure it runs
  * only if the component is actually used.
  */
-const registerGsapPlugin = () => {
-  if (!isScrollTriggerRegistered) {
+const registerGsapPlugin = createClientOnlyFn(() => {
     gsap.registerPlugin(ScrollTrigger)
-    isScrollTriggerRegistered = true
-  }
-}
+})
 
 // --- Define Color and Trigger Types ---
 
