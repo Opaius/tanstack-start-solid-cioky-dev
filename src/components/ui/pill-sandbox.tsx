@@ -355,7 +355,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           pill.rotation += (targetRotation - pill.rotation) * rotationSmoothing
 
           // Apply the final transform to the DOM element.
-          pill.dom.style.transform = `translate(${translateX}px, ${translateY}px) rotate(${pill.rotation}rad)`
+          pill.dom.style.transform = `translate3d(${translateX}px, ${translateY}px, 0px) rotate(${pill.rotation}rad)`
         })
 
         frameId = requestAnimationFrame(syncLoop)
@@ -422,7 +422,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
             <div
               ref={(el) => (pillRefs[index] = el)}
               class={clsx(
-                'pill absolute will-change-transform',
+                'pill absolute will-change-transform3d',
                 'font-medium leading-none rounded-full',
                 'transition-[background,border-radius,font-family] duration-300 ease-in-out',
                 'border border-white/20 backdrop-blur-md shadow-xl',

@@ -23,7 +23,7 @@ export function ProfileCard() {
       <CardBody class="flex flex-col justify-center items-center w-full h-full px-0">
         <CardItem
           translateZ={50}
-          class="bg-background/20 backdrop-blur-xs p-5 rounded-full group-hover:bg-primary/20"
+          class="bg-background/20 backdrop-blur-xs p-5 rounded-full group-hover:bg-primary/20 group-focus:bg-primary/20"
         >
           <p class="text-xl text-center font-normal">Cioky</p>
           <p class="text-md font-extralight">Fullstack Developer</p>

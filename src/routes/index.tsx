@@ -4,6 +4,10 @@ import { Button } from '../components/ui/button'
 import Particles from '../components/ui/particle-background'
 import { ProfileCard } from '../components/profile-card'
 import { WhoAmIPills } from '../components/who-am-i-pills'
+import {
+  BgContainer,
+  BgController,
+} from '../components/ui/background-gradient-switch'
 
 export const Route = createFileRoute('/')({ component: App })
 
@@ -89,12 +93,23 @@ function App() {
             alphaParticles={false}
             disableRotation={false}
           />
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-10">
             <ProfileCard />
           </div>
         </div>
       </div>
-      <WhoAmIPills />
+      <BgController
+        options={{
+          start: 'top 70%',
+          end: 'top 69.9%',
+          duration: 0.4,
+          ease: 'power1.inOut',
+        }}
+      >
+        <BgContainer as="section" bgEnd="var(--color-accent)">
+          <WhoAmIPills />
+        </BgContainer>
+      </BgController>
     </div>
   )
 }

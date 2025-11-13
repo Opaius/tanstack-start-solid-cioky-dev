@@ -54,7 +54,21 @@ export function WhoAmIPills() {
     <PillSandbox
       pills={whoAmIPills}
       categories={categories}
-      containerClass="w-full h-[100vh] md:h-[90vh]"
+      containerClass="w-full h-[150vh] md:h-[90vh]"
+      physicsOptions={{
+        // The bounciness of objects (0-1)
+        restitution: 0.8,
+        // The friction between objects (0-1)
+        friction: 0.1,
+        // The mass of objects
+        density: 0.08,
+        // Damps linear velocity over time, simulating air resistance
+        linearDamping: 0.5,
+        // How much the pill tilts based on its horizontal velocity
+        tiltFactor: 0.1,
+        // The maximum visual rotation of a pill in radians
+        maxVisualRotation: 0.1,
+      }}
     />
   )
 }
