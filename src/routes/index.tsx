@@ -8,6 +8,7 @@ import {
   BgContainer,
   BgController,
 } from '../components/ui/background-gradient-switch'
+import { ToolsCloud } from '../components/tools-cloud'
 
 export const Route = createFileRoute('/')({ component: App })
 
@@ -108,6 +109,9 @@ function App() {
       >
         <BgContainer as="section" bgEnd="var(--color-accent)">
           <WhoAmIPills />
+        </BgContainer>
+        <BgContainer bgEnd="var(--color-primary)" class="w-full h-screen">
+          <ToolsCloud />
         </BgContainer>
       </BgController>
     </div>

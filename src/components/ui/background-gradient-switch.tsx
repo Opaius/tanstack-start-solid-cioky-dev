@@ -19,9 +19,6 @@ import type { Component, JSX, ParentProps } from 'solid-js'
  * We call this inside the component to ensure it runs
  * only if the component is actually used.
  */
-const registerGsapPlugin = () => {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 // --- Define Color and Trigger Types ---
 
@@ -147,9 +144,6 @@ const computeColor = (
 }
 
 export const BgController: Component<BgControllerProps> = (props) => {
-  // ✅ Optimization 2: Register plugin on component instantiation
-  registerGsapPlugin()
-
   const {
     start = 'top 70%',
     end = 'top 69.9%',
@@ -304,6 +298,9 @@ export const BgController: Component<BgControllerProps> = (props) => {
     background:
       'linear-gradient(180deg, rgba(var(--grad-rs), var(--grad-gs), var(--grad-bs), var(--grad-as)), rgba(var(--grad-r), var(--grad-g), var(--grad-b), var(--grad-a)))',
   }
+  onMount(() => {
+    gsap.registerPlugin(ScrollTrigger)
+  })
 
   return (
     <BgControllerContext.Provider value={contextValue}>

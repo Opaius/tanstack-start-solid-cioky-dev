@@ -211,5 +211,5 @@ html {
   scroll-behavior: smooth;
 }
 body {
-  @apply bg-background;
+  background-color: var(--color-background);
 }
