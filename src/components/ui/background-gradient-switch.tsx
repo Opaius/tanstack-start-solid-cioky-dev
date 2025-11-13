@@ -11,20 +11,17 @@ import {
 import { Dynamic, Portal } from 'solid-js/web'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { createClientOnlyFn } from '@tanstack/solid-start'
 import { getComputedColor } from '../../lib/utils'
 import type { Component, JSX, ParentProps } from 'solid-js'
-
-
 
 /**
  * Registers ScrollTrigger if it hasn't been already.
  * We call this inside the component to ensure it runs
  * only if the component is actually used.
  */
-const registerGsapPlugin = createClientOnlyFn(() => {
-    gsap.registerPlugin(ScrollTrigger)
-})
+const registerGsapPlugin = () => {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 // --- Define Color and Trigger Types ---
 
