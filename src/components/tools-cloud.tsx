@@ -213,38 +213,34 @@ export function ToolsCloud() {
   })
 
   return (
-    <div>
-      <div>
-        <Show when={focusedIcon()}>
-          <div class="w-full flex flex-col items-center justify-center gap-4 text-center">
-            <div
-              ref={titleRef}
-              class="capitalize max-w-md text-3xl font-bold bg-linear-to-r from-primary to-secondary w-full py-6 rounded-full"
-            >
-              {decodeSlug(focusedIcon()!).replace('dot', '.')}
-            </div>
-            <div
-              ref={descriptionRef}
-              class="max-w-md text-2xl px-10 bg-linear-to-r from-primary to-secondary w-full py-10 rounded-[2em] font-light leading-8"
-            >
-              {toolDescriptions[decodeSlug(focusedIcon()!)].description}
-              <div class="mt-5 flex flex-col items-center justify-center gap-5">
-                <span class="text-md font-medium  text-primary-800">
-                  {toolDescriptions[decodeSlug(focusedIcon()!)].progress}%
-                  knowledge
-                </span>
-                <DottProgress
-                  progress={
-                    toolDescriptions[decodeSlug(focusedIcon()!)].progress
-                  }
-                  dottColor="var(--color-accent-300)"
-                  progressColor="var(--color-primary-800)"
-                />
-              </div>
+    <div class="flex flex-col lg:flex-row">
+      <Show when={focusedIcon()}>
+        <div class="flex flex-col items-center justify-center gap-4 text-center">
+          <div
+            ref={titleRef}
+            class="capitalize max-w-md text-3xl font-bold bg-linear-to-r from-primary to-secondary w-full py-6 rounded-full"
+          >
+            {decodeSlug(focusedIcon()!).replace('dot', '.')}
+          </div>
+          <div
+            ref={descriptionRef}
+            class="max-w-md text-2xl px-10 bg-linear-to-r from-primary to-secondary w-full py-10 rounded-[2em] font-light leading-8"
+          >
+            {toolDescriptions[decodeSlug(focusedIcon()!)].description}
+            <div class="mt-5 flex flex-col items-center justify-center gap-5">
+              <span class="text-md font-medium  text-primary-800">
+                {toolDescriptions[decodeSlug(focusedIcon()!)].progress}%
+                knowledge
+              </span>
+              <DottProgress
+                progress={toolDescriptions[decodeSlug(focusedIcon()!)].progress}
+                dottColor="var(--color-accent-300)"
+                progressColor="var(--color-primary-800)"
+              />
             </div>
           </div>
-        </Show>
-      </div>
+        </div>
+      </Show>
       <IconCloud
         images={icons}
         quality={2}
