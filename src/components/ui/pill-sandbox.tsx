@@ -81,6 +81,8 @@ type PlanckPill = {
   rotation: number
 }
 
+type CachedPill = PlanckPill & { width: number; height: number; radius: number }
+
 /**
  * A SolidJS component that creates an interactive 2D physics sandbox for "pills".
  * It uses Planck.js for the physics simulation and synchronizes the state of the
@@ -180,7 +182,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       ) // Right
 
       // 3. --- Create Dynamic Bodies for Pills ---
-      const planckPills: Array<PlanckPill> = []
+      const planckPills: Array<CachedPill> = []
       const fixtureProps = {
         restitution: options.restitution,
         friction: options.friction,
@@ -233,7 +235,14 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           body.getPosition(),
         )
 
-        planckPills.push({ dom: pillEl, body, rotation: 0 })
+        planckPills.push({
+          dom: pillEl,
+          body,
+          rotation: 0,
+          width,
+          height,
+          radius,
+        })
       })
 
       // 4. --- Mouse/Touch Interaction ---
@@ -260,24 +269,17 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       const handlePointerDown = (e: MouseEvent | TouchEvent) => {
         const pos = getPointerPosition(e)
 
-        // Check if the pointer is inside any of the pill's DOM elements.
-        planckPills.forEach(({ body, dom }) => {
-          const rect = dom.getBoundingClientRect()
-          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-          // Check if pointer is within pill's visual bounds
-          if (
-            clientX >= rect.left &&
-            clientX <= rect.right &&
-            clientY >= rect.top &&
-            clientY <= rect.bottom
-          ) {
+        planckPills.forEach((pill) => {
+          const dx = pos.x - pill.body.getPosition().x
+          const dy = pos.y - pill.body.getPosition().y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          if (distance <= pill.radius) {
+            // start dragging
             e.preventDefault() // Prevent scrolling on mobile while dragging.
-            mouseBody = body
+            mouseBody = pill.body
             isDragging = true
             targetMousePos = new Vec2(pos.x, pos.y)
-            body.setLinearVelocity(new Vec2(0, 0)) // Stop the body's momentum.
+            pill.body.setLinearVelocity(new Vec2(0, 0))
           }
         })
       }
@@ -342,8 +344,10 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           const vel = pill.body.getLinearVelocity()
 
           // Calculate the pixel-based transform values.
-          const translateX = pos.x * SCALE_FACTOR - pill.dom.offsetWidth / 2
-          const translateY = pos.y * SCALE_FACTOR - pill.dom.offsetHeight / 2
+          const translateX =
+            pos.x * SCALE_FACTOR - (pill.width * SCALE_FACTOR) / 2
+          const translateY =
+            pos.y * SCALE_FACTOR - (pill.height * SCALE_FACTOR) / 2
 
           // --- Visual Rotation ---
           // Calculate a target rotation based on horizontal velocity for a "tilt" effect.
