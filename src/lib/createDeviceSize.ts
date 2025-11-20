@@ -109,46 +109,45 @@ export const createDeviceSize = (debounceMs = 100) => {
   let debounceTimer: ReturnType<typeof setTimeout>
 
   /**
-   * The event handler for the window's resize event.
+   * The event handler for the window's resize event. It debounces updates for performance.
    */
   const handleResize = () => {
-    // First, immediately check and update the breakpoint.
-    // This ensures that UI dependent on the breakpoint (e.g., via <Show> or class toggles)
-    // reacts instantly, preventing layout flashes or incorrect component rendering.
-    const { size: newBreakpoint } = getDeviceState()
-    if (newBreakpoint !== breakpoint()) {
-      setBreakpoint(newBreakpoint)
-    }
-
-    // Next, debounce the updates for width and height signals.
-    // This prevents excessive re-renders and calculations that depend on the exact dimensions,
-    // which are often less critical to update instantly than the breakpoint.
+    // Clear any existing timer to reset the debounce period.
     clearTimeout(debounceTimer)
+
+    // Set a new timer.
     debounceTimer = setTimeout(() => {
       const {
-        width: finalWidth,
-        height: finalHeight,
-        size: finalBreakpoint,
+        width: newWidth,
+        height: newHeight,
+        size: newBreakpoint,
       } = getDeviceState()
 
-      setSize(finalWidth)
-      setHeight(finalHeight)
-
-      // As a final safety check, verify the breakpoint again after the debounce timer.
-      // This handles edge cases where the resize might have ended on a different breakpoint
-      // than the one captured at the start of the event.
-      if (finalBreakpoint !== breakpoint()) {
-        setBreakpoint(finalBreakpoint)
-      }
+      // Update all signals after the debounce period.
+      setSize(newWidth)
+      setHeight(newHeight)
+      setBreakpoint(newBreakpoint)
     }, debounceMs)
   }
 
   // --- Effects ---
-  // Attach the resize event listener when the component mounts.
+  // Attach listeners when the component mounts on the client.
   onMount(() => {
+    // On the very first client-side run, we want to immediately set the correct device state
+    // to override any server-rendered defaults. We don't debounce this initial check.
+    const {
+      width: initialWidth,
+      height: initialHeight,
+      size: initialBreakpoint,
+    } = getDeviceState()
+    setSize(initialWidth)
+    setHeight(initialHeight)
+    setBreakpoint(initialBreakpoint)
+
+    // After the initial state is set, we listen for subsequent resize events, which will be debounced.
     window.addEventListener('resize', handleResize)
-    // Clean up the event listener and any pending timers when the component unmounts
-    // to prevent memory leaks.
+
+    // Clean up the event listener and any pending timers when the component unmounts.
     onCleanup(() => {
       window.removeEventListener('resize', handleResize)
       clearTimeout(debounceTimer)

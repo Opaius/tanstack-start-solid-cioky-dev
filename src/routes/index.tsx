@@ -1,6 +1,4 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { CardNav } from '../components/ui/card-nav'
-import { Button } from '../components/ui/button'
 import Particles from '../components/ui/particle-background'
 import { ProfileCard } from '../components/profile-card'
 import { WhoAmIPills } from '../components/who-am-i-pills'
@@ -9,75 +7,15 @@ import {
   BgController,
 } from '../components/ui/background-gradient-switch'
 import { ToolsCloud } from '../components/tools-cloud'
+import 'solid-devtools'
+import { HeaderNav } from '../components/header-nav'
 
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
-  const items = [
-    {
-      label: 'About',
-      bg: 'var(--color-primary)',
-      textColor: '#fff',
-      links: [
-        {
-          label: 'My Job Experience',
-          ariaLabel: 'About Job Experience',
-          href: '/#job-experience',
-        },
-        {
-          label: 'My Skills',
-          ariaLabel: 'My Skills',
-          href: '/#skills',
-        },
-        {
-          label: 'My Tools',
-          ariaLabel: 'My Tools',
-          href: '/#tools',
-        },
-      ],
-    },
-    {
-      label: 'Projects',
-      bg: 'var(--color-secondary)',
-      textColor: '#fff',
-      links: [
-        {
-          label: 'My Projects',
-          ariaLabel: 'My Projects',
-          href: '/projects',
-        },
-      ],
-    },
-    {
-      label: 'Contact',
-      bg: 'var(--color-accent)',
-      textColor: 'var(--color-text)',
-      links: [
-        {
-          label: 'Email',
-          ariaLabel: 'Email me',
-          href: 'mailto:ciocan.sebastian45@gmail.com',
-        },
-        {
-          label: 'Instagram',
-          ariaLabel: 'Instagram',
-          href: 'https://instagram.com/ciokydev',
-        },
-        {
-          label: 'LinkedIn',
-          ariaLabel: 'LinkedIn',
-          href: 'https://www.linkedin.com/in/sebastian-ciocan-a5aa5138b',
-        },
-      ],
-    },
-  ]
   return (
     <div class="w-full">
-      <CardNav
-        logo="cioky.dev"
-        button={<Button>Button</Button>}
-        items={items}
-      />
+      <HeaderNav />
       <div class="relative w-full h-screen">
         <div class="absolute inset-0 w-full h-full">
           <Particles
@@ -107,10 +45,14 @@ function App() {
           ease: 'power1.inOut',
         }}
       >
-        <BgContainer as="section" bgEnd="var(--color-accent)">
+        <BgContainer as="section" class="h-full" bgEnd="var(--color-accent)">
           <WhoAmIPills />
         </BgContainer>
-        <BgContainer bgEnd="var(--color-primary)" class="w-full h-screen">
+        <BgContainer
+          bgEnd="var(--color-primary)"
+          class="w-full h-full flex items-center justify-center"
+          as="section"
+        >
           <ToolsCloud />
         </BgContainer>
       </BgController>

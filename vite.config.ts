@@ -2,6 +2,7 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import { defineConfig } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
+import devtools from 'solid-devtools/vite'
 
 import { tanstackStart } from '@tanstack/solid-start/plugin/vite'
 import solidPlugin from 'vite-plugin-solid'
@@ -34,6 +35,9 @@ export default defineConfig({
           ],
         },
       ],
+    }),
+    devtools({
+      autoname: true,
     }),
   ],
 })
