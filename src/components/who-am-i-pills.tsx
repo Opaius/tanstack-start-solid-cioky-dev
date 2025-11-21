@@ -1,4 +1,4 @@
-import { PillSandbox } from './ui/pill-sandbox'
+import { PillSandbox } from './ui/rapier2d-pill-sandbox'
 import type { Pill } from './ui/pill-sandbox'
 
 export function WhoAmIPills() {

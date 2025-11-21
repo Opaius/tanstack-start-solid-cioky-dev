@@ -13,6 +13,7 @@
     "start": "bun .output/server/index.mjs"
   },
   "dependencies": {
+    "@dimforge/rapier2d-compat": "^0.19.3",
     "@kobalte/core": "^0.13.11",
     "@sentry/solid": "^10.26.0",
     "@t3-oss/env-core": "^0.13.8",
@@ -36,6 +37,7 @@
     "lucide-solid": "^0.544.0",
     "motion": "^12.23.24",
     "ogl": "^1.0.11",
+    "p2-es": "^1.2.3",
     "planck": "^1.4.2",
     "solid-js": "^1.9.10",
     "tailwind-merge": "^3.4.0",
@@ -52,6 +54,8 @@
     "solid-devtools": "^0.34.4",
     "typescript": "^5.9.3",
     "vite": "^7.2.4",
-    "vite-plugin-solid": "^2.11.10"
+    "vite-plugin-solid": "^2.11.10",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0"
   }
 }

@@ -492,11 +492,15 @@ export function IconCloud(props: IconCloudProps) {
       ref={canvasElement}
       width={finalProps.width}
       height={finalProps.height}
+      style={{
+        width: `${finalProps.width}px`,
+        height: `${finalProps.height}px`,
+      }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       aria-label="Interactive 3D Icon Cloud"
-      role="img"  
+      role="img"
     />
   )
 }

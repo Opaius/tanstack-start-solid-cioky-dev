@@ -175,8 +175,8 @@ export function ToolsCloud() {
   })
   const canvasSize = createMemo(() => {
     return {
-      width: deviceSize.size() < 768 ? 300 : 600,
-      height: deviceSize.size() < 768 ? 300 : 600,
+      width: deviceSize.compare('<', 'md') ? 300 : 600,
+      height: deviceSize.compare('<', 'md') ? 300 : 600,
     }
   })
 
@@ -215,19 +215,20 @@ export function ToolsCloud() {
   return (
     <div class="flex flex-col lg:flex-row">
       <Show when={focusedIcon()}>
-        <div class="flex flex-col items-center justify-center gap-4 text-center">
+        <div class="flex flex-col items-center mx-4 justify-center gap-4 text-center">
           <div
             ref={titleRef}
-            class="capitalize max-w-md text-3xl font-bold bg-linear-to-r from-primary to-secondary w-full py-6 rounded-full"
+            class="capitalize max-w-md  md:text-3xl text-xl font-bold bg-linear-to-r from-primary to-secondary w-full md:py-6 py-4 rounded-full"
           >
             {decodeSlug(focusedIcon()!).replace('dot', '.')}
           </div>
           <div
             ref={descriptionRef}
-            class="max-w-md text-2xl px-10 bg-linear-to-r from-primary to-secondary w-full py-10 rounded-[2em] font-light leading-8"
+            class="max-w-md w-full md:text-2xl text-xl px-10 bg-linear-to-r from-primary to-secondary py-10 rounded-[2em] font-light leading-8"
           >
             {toolDescriptions[decodeSlug(focusedIcon()!)].description}
-            <div class="mt-5 flex flex-col items-center justify-center gap-5">
+            {/* Added w-full here to enforce width constraint so DottProgress shrinks correctly */}
+            <div class="mt-5 flex flex-col items-center justify-center gap-5 w-full">
               <span class="text-md font-medium  text-primary-800">
                 {toolDescriptions[decodeSlug(focusedIcon()!)].progress}%
                 knowledge
@@ -236,6 +237,7 @@ export function ToolsCloud() {
                 progress={toolDescriptions[decodeSlug(focusedIcon()!)].progress}
                 dottColor="var(--color-accent-300)"
                 progressColor="var(--color-primary-800)"
+                dottSize={10}
               />
             </div>
           </div>

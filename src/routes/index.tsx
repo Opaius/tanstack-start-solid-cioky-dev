@@ -45,7 +45,7 @@ function App() {
           ease: 'power1.inOut',
         }}
       >
-        <BgContainer as="section" class="h-full" bgEnd="var(--color-accent)">
+        <BgContainer as="section" bgEnd="var(--color-accent)">
           <WhoAmIPills />
         </BgContainer>
         <BgContainer
