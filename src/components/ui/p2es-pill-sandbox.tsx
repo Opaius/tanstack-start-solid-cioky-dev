@@ -1,10 +1,11 @@
-import { Index, createEffect, createMemo, onCleanup, onMount } from 'solid-js'
+import { Index, createEffect, createMemo, onCleanup } from 'solid-js'
 import clsx from 'clsx'
-import { Body, Capsule, RaycastResult, World, vec2 } from 'p2-es'
+// 1. Import Box shape
+import { Body, Box, Capsule, World, vec2 } from 'p2-es'
 import { createDeviceSize } from '../../lib/createDeviceSize'
 import type { Component, JSX } from 'solid-js'
 
-const SCALE = 15
+const SCALE = 50 // Increased scale slightly for better stability
 const STEP = 1 / 60
 
 export type Pill = {
@@ -50,9 +51,9 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
   const physicsOptions = createMemo(() => ({
     restitution: props.physicsOptions?.restitution ?? 0.7,
     friction: props.physicsOptions?.friction ?? 0.1,
-    density: props.physicsOptions?.density ?? 0.5,
-    linearDamping: props.physicsOptions?.linearDamping ?? 0.1,
-    tiltFactor: props.physicsOptions?.tiltFactor ?? 0.05,
+    density: props.physicsOptions?.density ?? 1.5,
+    linearDamping: props.physicsOptions?.linearDamping ?? 1.5, // Higher damping stops infinite sliding
+    tiltFactor: props.physicsOptions?.tiltFactor ?? 0.1,
     maxVisualRotation:
       props.physicsOptions?.maxVisualRotation ?? (Math.PI / 180) * 15,
   }))
@@ -64,7 +65,6 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
   })
 
   createEffect(() => {
-    // dependency
     widthDependency()
 
     if (!containerRef) return
@@ -77,17 +77,25 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
     const world = new World({ gravity: [0, 0] })
 
-    // walls
-    const addWall = (x: number, y: number, W: number, H: number) => {
+    // 2. FIXED: Use Box for walls.
+    // This ensures walls are flat planes, not bulging capsules.
+    const addWall = (x: number, y: number, width: number, height: number) => {
+      // Mass 0 = Static body
       const b = new Body({ mass: 0, position: [x, y] })
-      b.addShape(new Capsule({ length: W, radius: H / 2 })) // wide flat wall
+      b.addShape(new Box({ width, height }))
       world.addBody(b)
     }
 
-    addWall(w / 2, -0.05, w, 0.1)
-    addWall(w / 2, h + 0.05, w, 0.1)
-    addWall(-0.05, h / 2, 0.1, h)
-    addWall(w + 0.05, h / 2, 0.1, h)
+    const thickness = 10 // Make walls thick so fast objects don't tunnel through
+
+    // Top (Center X, Y = just above 0)
+    addWall(w / 2, -thickness / 2, w + thickness * 2, thickness)
+    // Bottom (Center X, Y = just below height)
+    addWall(w / 2, h + thickness / 2, w + thickness * 2, thickness)
+    // Left (X = just left of 0, Center Y)
+    addWall(-thickness / 2, h / 2, thickness, h + thickness * 2)
+    // Right (X = just right of width, Center Y)
+    addWall(w + thickness / 2, h / 2, thickness, h + thickness * 2)
 
     // pills
     const pills: Array<P2Pill> = []
@@ -97,7 +105,8 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
       const height = el.offsetHeight / SCALE
       const radius = height / 2
 
-      const len = Math.max(width - height, 0.0001)
+      // Capsule length is distance between foci (Total Width - 2 * Radius)
+      const len = Math.max(width - height, 0)
 
       const body = new Body({
         mass: options.density,
@@ -106,20 +115,27 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
           h / 2 + (Math.random() - 0.5) * h * 0.5,
         ],
         damping: options.linearDamping,
-        angularDamping: 1,
-        fixedRotation: true,
+        angularDamping: 1, // Prevents endless spinning
+        fixedRotation: true, // We handle rotation visually
       })
 
       const capsule = new Capsule({ length: len, radius })
 
-      // rotate vertical pills
-      if (height > width) capsule.angle = Math.PI / 2
+      // Material settings
+      capsule.material = new (world.defaultMaterial.constructor as any)()
+      // (p2-es material setup can be implicit, but setting direct properties on contact materials is often easier in simple setups,
+      // here we rely on the body damping mostly, but can add contact material if needed for bounce)
+
+      // Rotate vertical pills (if height > width)
+      if (height > width) {
+        capsule.angle = Math.PI / 2
+      }
 
       body.addShape(capsule)
 
       const angle = Math.random() * 2 * Math.PI
-      body.velocity[0] = Math.cos(angle) * 3
-      body.velocity[1] = Math.sin(angle) * 3
+      body.velocity[0] = Math.cos(angle) * 2
+      body.velocity[1] = Math.sin(angle) * 2
 
       world.addBody(body)
 
@@ -143,15 +159,24 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
     const pointerDown = (e: MouseEvent | TouchEvent) => {
       const pos = getPos(e)
+
+      // Simple Hit Test
+      // Check if mouse is inside any pill body
       const hitBodies = world.hitTest(
         pos,
         pills.map((p) => p.body),
+        5, // pixel tolerance
       )
 
       if (hitBodies.length > 0) {
         dragging = true
         draggingBody = hitBodies[0]
-        draggingBody.velocity[0] = draggingBody.velocity[1] = 0
+
+        // Stop it immediately so we can control it
+        draggingBody.velocity[0] = 0
+        draggingBody.velocity[1] = 0
+        // Wake it up if it was sleeping
+        draggingBody.wakeUp()
 
         target[0] = pos[0]
         target[1] = pos[1]
@@ -161,6 +186,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
     const pointerMove = (e: MouseEvent | TouchEvent) => {
       if (!dragging || !draggingBody) return
+      e.preventDefault() // prevent scroll on mobile
       const [x, y] = getPos(e)
       target[0] = x
       target[1] = y
@@ -174,12 +200,8 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
     containerRef.addEventListener('mousedown', pointerDown)
     containerRef.addEventListener('mousemove', pointerMove)
     window.addEventListener('mouseup', pointerUp)
-    containerRef.addEventListener('touchstart', pointerDown, {
-      passive: false,
-    })
-    containerRef.addEventListener('touchmove', pointerMove, {
-      passive: false,
-    })
+    containerRef.addEventListener('touchstart', pointerDown, { passive: false })
+    containerRef.addEventListener('touchmove', pointerMove, { passive: false })
     window.addEventListener('touchend', pointerUp)
 
     // loop
@@ -188,25 +210,29 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
     const maxRot = options.maxVisualRotation
 
     const loop = () => {
+      // Apply spring force for dragging
       if (dragging && draggingBody) {
         const b = draggingBody
         const dx = target[0] - b.position[0]
         const dy = target[1] - b.position[1]
 
-        // Move towards the target with a proportional velocity (simple spring)
-        const springStrength = 10
+        const springStrength = 15 // Tight spring
         b.velocity[0] = dx * springStrength
         b.velocity[1] = dy * springStrength
       }
 
+      // Step Physics
       world.step(STEP)
 
+      // Sync DOM
       for (const pill of pills) {
         const b = pill.body
 
+        // Convert Physics Coordinates -> Pixels
         const px = b.position[0] * SCALE - (pill.width * SCALE) / 2
         const py = b.position[1] * SCALE - (pill.height * SCALE) / 2
 
+        // Visual Tilt based on velocity
         const targetRot = Math.max(
           Math.min(b.velocity[0] * tiltFactor, maxRot),
           -maxRot,
@@ -222,7 +248,6 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
     onCleanup(() => {
       cancelAnimationFrame(frameId)
-
       containerRef.removeEventListener('mousedown', pointerDown)
       containerRef.removeEventListener('mousemove', pointerMove)
       window.removeEventListener('mouseup', pointerUp)
@@ -238,6 +263,7 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
 
   return (
     <div class={clsx('relative', props.containerClass)}>
+      {/* Category Legend */}
       <div class="*:p-4 *:bg-gray-600/50 flex flex-wrap items-center justify-center gap-5 w-full">
         <div class="rounded-full text-center">GuideMap</div>
         {props.categories.map((cat) => (
@@ -251,10 +277,11 @@ export const PillSandbox: Component<PillSandboxProps> = (props) => {
         ))}
       </div>
 
+      {/* Physics Container */}
       <div
         ref={containerRef}
         class={clsx(
-          'physics-container relative w-full h-full overflow-hidden',
+          'physics-container relative w-full h-full overflow-hidden select-none',
           props.containerClass,
         )}
         onMouseDown={handleMouseDown}
