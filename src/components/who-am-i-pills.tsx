@@ -1,4 +1,4 @@
-import { PillSandbox } from './ui/p2es-pill-sandbox'
+import { PillSandbox } from './ui/matterjs-pill-sandbox'
 import type { Pill } from './ui/pill-sandbox'
 
 export function WhoAmIPills() {
@@ -55,20 +55,6 @@ export function WhoAmIPills() {
       pills={whoAmIPills}
       categories={categories}
       containerClass="w-full h-[150vh] md:h-[90vh]"
-      physicsOptions={{
-        // The bounciness of objects (0-1)
-        restitution: 0.8,
-        // The friction between objects (0-1)
-        friction: 0.1,
-        // The mass of objects
-        density: 0.08,
-        // Damps linear velocity over time, simulating air resistance
-        linearDamping: 0.5,
-        // How much the pill tilts based on its horizontal velocity
-        tiltFactor: 0.1,
-        // The maximum visual rotation of a pill in radians
-        maxVisualRotation: 0.1,
-      }}
     />
   )
 }

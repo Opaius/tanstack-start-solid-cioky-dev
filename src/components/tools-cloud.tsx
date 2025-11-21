@@ -213,7 +213,7 @@ export function ToolsCloud() {
   })
 
   return (
-    <div class="flex flex-col lg:flex-row">
+    <div class="flex flex-col lg:flex-row items-center justify-center">
       <Show when={focusedIcon()}>
         <div class="flex flex-col items-center mx-4 justify-center gap-4 text-center">
           <div
@@ -224,7 +224,7 @@ export function ToolsCloud() {
           </div>
           <div
             ref={descriptionRef}
-            class="max-w-md w-full md:text-2xl text-xl px-10 bg-linear-to-r from-primary to-secondary py-10 rounded-[2em] font-light leading-8"
+            class="max-w-md w-full md:text-2xl text-md px-10 bg-linear-to-r from-primary to-secondary py-10 rounded-[2em] font-light leading-8"
           >
             {toolDescriptions[decodeSlug(focusedIcon()!)].description}
             {/* Added w-full here to enforce width constraint so DottProgress shrinks correctly */}
