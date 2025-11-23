@@ -1,11 +1,10 @@
 import { CardBody, CardContainer, CardItem } from './ui/3d-card'
-import { Avatar, AvatarImage } from './ui/avatar'
 import { Button } from './ui/button'
 import LetterGlitch from './ui/letter-glitch'
 
 export function ProfileCard() {
   return (
-    <CardContainer class="w-[320px] h-[500px] md:w-[400px] md:h-[600px] shadow-[0_0_4px_5px_rgba(241,116,116,0.10),0_0_10px_5px_#2E0505] pb-0 relative pt-10 group">
+    <CardContainer class="w-72 h-130 shadow-[0_0_4px_5px_rgba(241,116,116,0.10),0_0_10px_5px_#2E0505] pb-0 relative pt-10 group">
       <div class="absolute inset-0">
         <LetterGlitch
           glitchColors={[
@@ -23,10 +22,11 @@ export function ProfileCard() {
       <CardBody class="flex flex-col justify-center items-center w-full h-full px-0">
         <CardItem
           translateZ={50}
-          class="bg-background/20 backdrop-blur-xs p-5 rounded-full group-hover:bg-primary/20 group-focus:bg-primary/20"
+          class="bg-background/20 backdrop-blur-xs p-2 rounded-full group-hover:bg-primary/20 group-focus:bg-primary/20 focus:bg-primary/20 mx-5"
         >
-          <p class="text-xl text-center font-normal">Cioky</p>
-          <p class="text-md font-extralight">Fullstack Developer</p>
+          <p class="text-lg text-center font-light text-pretty">
+            Full-Stack Developer for Ambitious Businesses
+          </p>
         </CardItem>
         <div class="h-full w-full relative ">
           <CardItem
@@ -42,19 +42,12 @@ export function ProfileCard() {
           </CardItem>
           <CardItem
             translateZ={90}
-            className="absolute bottom-[40px] left-0 w-full flex items-center px-[30px]"
+            className="absolute bottom-[40px] left-0 w-full flex items-center px-2 gap-2"
           >
-            <div class="bg-background rounded-md p-[10px] flex gap-[10px] w-full justify-center items-center">
-              <Avatar class="size-[50px] bg-primary">
-                <AvatarImage src="/cioky.png" class="object-cover" />
-              </Avatar>
-              <div class="flex flex-col">
-                <p class="text-md font-bold">@ciokydev</p>
-                <p class="text-md text-green-300">Online</p>
-              </div>
-              <Button class="text-foreground ml-auto rounded-md">
-                Contact me
-              </Button>
+            <div class="flex items-center w-full gap-2">
+              <div class="size-10 aspect-square bg-accent rounded-md" />
+              <Button class="w-full ">Let's build together !</Button>
+              <div class="size-10 aspect-square bg-accent rounded-md" />
             </div>
           </CardItem>
         </div>
